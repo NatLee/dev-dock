@@ -38,17 +38,17 @@ RUN $SCRIPTS_DIR/1.user-settings.sh
 # Install OS packages
 RUN $SCRIPTS_DIR/2.install-packages.sh
 
-# Install Conda
-RUN $SCRIPTS_DIR/3.install-conda.sh
-
 # Install required softwares
 ADD ./vnc-tools $VNC_TOOL_DIR
-RUN $SCRIPTS_DIR/4.install-vnc-core.sh
+RUN $SCRIPTS_DIR/3.install-vnc-core.sh
 ADD ./xfce $HOME
 
 # Install Debs and other softwares
 ADD ./pkg $HOME/install
-RUN $SCRIPTS_DIR/5.install-custome-pkgs.sh
+RUN $SCRIPTS_DIR/4.install-custome-pkgs.sh
+
+# Install Conda
+RUN $SCRIPTS_DIR/5.install-conda.sh
 
 # Set permissions
 RUN $SCRIPTS_DIR/6.set-permissions.sh $SCRIPTS_DIR $HOME
