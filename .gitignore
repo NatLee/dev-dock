@@ -1,0 +1,11 @@
+desktop
+
+.DS_Store
+
+desktop.ini
+
+__pycache__
+
+.vs
+
+.vscode
