@@ -14,7 +14,7 @@ services:
       #  - /etc/localtime:/etc/localtime:ro
       - ./desktop:/root/Desktop
     environment:
-      VNC_PW: infor1234
+      VNC_PW: test
       VNC_RESOLUTION: 1600x900
       DEFAULT_USER: test
       DEFAULT_USER_PASSWORD: test
