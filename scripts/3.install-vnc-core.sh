@@ -17,7 +17,7 @@ tar xzf $VNC_TOOL_DIR/noVNC-v1.1.0.tar.gz --strip 1 -C $NO_VNC_DIR
 tar xzf $VNC_TOOL_DIR/websockifyv0.9.0.tar.gz --strip 1 -C $NO_VNC_DIR/utils/websockify
 # noVNC's `websockify` needs numpy
 # https://numpy.org/doc/stable/reference/generated/numpy.fromstring.html
-pip install numpy
+apt-get -y install python-numpy
 
 chmod +x -v $NO_VNC_DIR/utils/*.sh
 # Create index.html to forward automatically to `vnc_auto.html`
