@@ -1,7 +1,7 @@
 
 # GUI Container using Xfce with VNC
 
-This repo is creating a common GUI image by using docker.
+This repo is creating a common GUI image by using docker for developing.
 
 The image included the following components:
 
