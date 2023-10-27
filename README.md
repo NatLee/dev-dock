@@ -104,3 +104,9 @@ docker run -d -p 12345:5901 -p 13579:6901 -p 24680:22 \
             --name test test-vnc-gui
 ```
 
+## Misc
+
+If you need use this with NVIDIA GPUs, you need to follow this in the main system.
+
+- [Installing the NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+
