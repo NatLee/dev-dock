@@ -31,10 +31,14 @@ fi
 echo "$VNC_PW" | vncpasswd -f >> $PASSWD_PATH
 chmod 600 $PASSWD_PATH
 
-# Start vncserver and noVNC webclient
-$NO_VNC_DIR/utils/launch.sh --vnc localhost:$VNC_PORT --listen $NO_VNC_PORT &
+# Start vncserver
 vncserver -kill $DISPLAY || rm -rfv /tmp/.X*-lock /tmp/.X11-unix || echo "Remove old vnc locks to be a reattachable container"
 vncserver $DISPLAY -depth $VNC_COL_DEPTH -geometry $VNC_RESOLUTION
+
+# Start noVNC webclient
+$NO_VNC_DIR/utils/novnc_proxy --vnc localhost:$VNC_PORT --listen $NO_VNC_PORT
+# novnc --listen $NO_VNC_PORT --vnc localhost:$VNC_PORT &
+
 $HOME/wm-startup.sh
 
 # Log connect options
