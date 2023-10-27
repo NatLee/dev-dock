@@ -6,8 +6,8 @@ dpkg -i ~/install/*.deb
 # Install Chrome
 echo "Install Chrome..."
 apt-get -y install libu2f-udev
-wget -O -P ~/install/chrome/ https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-dpkg -i ~/install/chrome/google-chrome-stable_current_amd64.deb
+wget -O ~/install/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+dpkg -i ~/install/chrome.deb
 cp /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable.bak
 cp ~/install/chrome/google-chrome-stable /usr/bin/google-chrome-stable
 apt-get -y --fix-broken install
