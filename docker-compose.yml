@@ -19,7 +19,11 @@ services:
       DEFAULT_USER: test
       DEFAULT_USER_PASSWORD: test
       ROOT_PASSWORD: root
-    #devices:
-    #  - /dev/nvidia0:/dev/nvidia0
-    #runtime: nvidia
     #privileged: true
+    #deploy:
+    #  resources:
+    #    reservations:
+    #      devices:
+    #        - driver: nvidia
+    #          count: all
+    #          capabilities: [gpu]
