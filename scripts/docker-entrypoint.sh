@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Change user settings
-$SCRIPTS_DIR/user-settings.sh
+$SCRIPTS_DIR/1.user-settings.sh
 
 # Source $SCRIPTS_DIR/generate-container-user.sh
 source $HOME/.bashrc
