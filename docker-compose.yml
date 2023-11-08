@@ -1,17 +1,17 @@
 version: "3.9"
 
 services:
-  test:
+  vnc:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: test-vnc-gui
+    container_name: test
     ports:
       - "12345:5901" # VNC
-      - "13579:6901" # web VNC
+      - "13579:6901" # noVNC
       - "24680:22" # SSH
     volumes:
-      #  - /etc/localtime:/etc/localtime:ro
+      - /etc/localtime:/etc/localtime:ro
       - ./desktop:/root/Desktop
     environment:
       VNC_PW: test
@@ -20,6 +20,9 @@ services:
       DEFAULT_USER_PASSWORD: test
       ROOT_PASSWORD: root
     #privileged: true
+    # =====================
+    # GPU support
+    # =====================
     #deploy:
     #  resources:
     #    reservations:
