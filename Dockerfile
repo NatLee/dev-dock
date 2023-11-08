@@ -56,7 +56,6 @@ RUN $SCRIPTS_DIR/6.set-permissions.sh $SCRIPTS_DIR $HOME
 # Make ssh run folder
 RUN mkdir /run/sshd
 
-# Entrypoint
-ENTRYPOINT ["/root/scripts/docker-entrypoint.sh"]
-#CMD ["--tail-log"]
-CMD ["/usr/sbin/sshd", "-D"]
+COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

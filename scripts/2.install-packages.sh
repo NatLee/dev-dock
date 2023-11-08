@@ -46,7 +46,8 @@ apt-get -qq install -y apt-utils \
     mpv \
     gdebi \
     file-roller \
-    filezilla
+    filezilla \
+    supervisor
 
 # Set locales
 echo "Setting up locales..."
