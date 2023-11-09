@@ -1,0 +1,17 @@
+
+#!/bin/bash
+USER_TO_RUN_AS=$DEFAULT_USER
+
+# The path to the real Chrome binary
+REAL_CHROME_BIN='/opt/google/chrome/google-chrome'
+
+# Check if we are running as root
+if [ "$(id -u)" -eq 0 ]; then
+    # Run Chrome as a non-root user
+    # The 'su' command is used to switch the user
+    # 'export DISPLAY=:0' sets the DISPLAY environment variable for the non-root user session
+    su - $USER_TO_RUN_AS -c "export DISPLAY=:1; nohup $REAL_CHROME_BIN $@ > /dev/null 2>&1 &"
+else
+    # If not running as root, just run Chrome normally
+    $REAL_CHROME_BIN $@
+fi

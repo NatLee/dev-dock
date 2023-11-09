@@ -3,6 +3,8 @@
 
 > Only support x86/64.
 
+![desktop](./doc/desktop.png)
+
 This repo is creating a common GUI image by using docker for developing.
 
 The image included the following components:
@@ -15,6 +17,7 @@ The image included the following components:
 * Mini Conda
 * VScode
 * Google Chrome
+* Firefox
 * Anydesk
 
 ## Run docker without sudo
