@@ -25,6 +25,7 @@ apt-get -qq install -y apt-utils \
     sudo \
     ant ant-optional ant-contrib \
     wget \
+    curl \
     iputils-ping \
     git \
     xdg-utils \
