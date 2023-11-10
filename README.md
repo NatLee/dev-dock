@@ -16,7 +16,6 @@ The image included the following components:
 * Git
 * Mini Conda
 * VScode
-* Google Chrome
 * Firefox
 * Anydesk
 
