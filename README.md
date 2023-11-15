@@ -31,16 +31,24 @@ sudo groupadd docker && gpasswd -a $USER docker
 
 ## Usage
 
-- Build an image.
+### Quick start
+
+- Build an image and run a testing container.
 
 ```bash
-docker-compose build
+docker-compose build && docker-compose up
 ```
 
-- Run a container with the image build recently.
+### NVidia GPU support
+
+If you need use this with NVIDIA GPUs, you need to follow this in the main system.
+
+- [Installing the NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+
+When NVidia Docker is installed, use this command to run a testing container with GPU support.
 
 ```bash
-docker-compose up
+docker-compose -f docker-compose.nvidia.yml build && docker-compose -f docker-compose.nvidia.yml up
 ```
 
 ## Connection
@@ -53,7 +61,9 @@ If you have not change the default port yet, you can use the services with the f
 
 **＊ You can login SSH with `default user` or `root`.**
 
-## Some Flags
+## Parameters
+
+You can use these parameters to set some settings.
 
 * Map ports
     - 5901 (vnc protocol)
@@ -97,7 +107,7 @@ If you have not change the default port yet, you can use the services with the f
 
 **You need to restart the container to make Chinese input method work after first login into VNC.**
 
-* Test container:
+* Run a testing container
 
 ```bash
 docker run -d -p 12345:5901 -p 13579:6901 -p 24680:22 \
@@ -110,9 +120,7 @@ docker run -d -p 12345:5901 -p 13579:6901 -p 24680:22 \
             --name test test-vnc-gui
 ```
 
-## Misc
+# License
 
-If you need use this with NVIDIA GPUs, you need to follow this in the main system.
-
-- [Installing the NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+[MIT](./LICENSE)
 
