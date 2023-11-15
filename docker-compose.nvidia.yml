@@ -1,0 +1,32 @@
+version: "3.9"
+
+services:
+  vnc:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: test
+    ports:
+      - "12345:5901" # VNC
+      - "13579:6901" # noVNC
+      - "24680:22" # SSH
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./desktop:/root/Desktop
+    environment:
+      VNC_PW: test
+      VNC_RESOLUTION: 1600x900
+      DEFAULT_USER: test
+      DEFAULT_USER_PASSWORD: test
+      ROOT_PASSWORD: root
+    privileged: true
+    # =====================
+    # GPU support
+    # =====================
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
