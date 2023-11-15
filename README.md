@@ -5,6 +5,8 @@
 
 ![desktop](./doc/desktop.png)
 
+> Also can check the GUI [Management](https://github.com/NatLee/development-container-manager).
+
 This repo is creating a common GUI image by using docker for developing.
 
 The image included the following components:
