@@ -63,6 +63,9 @@ apt-get -y install fonts-droid-fallback \
     fonts-arphic-ukai \
     fonts-arphic-uming
 
+echo "Install Emoji fonts..."
+apt-get -y install fonts-noto-color-emoji
+
 # Install Chinese input methods
 echo "Install Chinese input methods..."
 apt-get update -y
