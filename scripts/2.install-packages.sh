@@ -75,9 +75,7 @@ echo "Downloading ant contrib jar file..."
 cd ~/.zcs-deps && wget https://files.zimbra.com/repository/ant-contrib/ant-contrib-1.0b1.jar
 
 echo "Setting up ssh..."
-# ssh-key setup and hack (when user changed for container)
-#cat /dev/zero | ssh-keygen -C "nat.lee@infortrend.com" -q -N "" > /dev/null
-#mkdir -p $HOME/.ssh && ssh-keyscan github.com >> $HOME/.ssh/known_hosts
+
 echo "PasswordAuthentication yes" >>/etc/ssh/sshd_config
 echo "PermitRootLogin yes" >>/etc/ssh/sshd_config
 
