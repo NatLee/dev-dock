@@ -1,5 +1,6 @@
+# Dev Dock
 
-# GUI Container using Xfce with VNC
+A GUI Container using Xfce with noVNC.
 
 > Only support x86/64.
 
