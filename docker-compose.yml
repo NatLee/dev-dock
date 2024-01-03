@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
+    image: gui-vnc
     container_name: test
     ports:
       - "12345:5901" # VNC
