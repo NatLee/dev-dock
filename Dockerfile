@@ -1,5 +1,5 @@
 #FROM nvidia/cuda:latest
-FROM python:3.9.16-slim-buster
+FROM debian:bookworm-slim
 
 # Environment variables
 ENV HOME=/root \
@@ -16,7 +16,7 @@ ENV HOME=/root \
     VNC_PW=vncpassword \
     VNC_VIEW_ONLY=false \
     DEBIAN_FRONTEND=noninteractive \
-    LANG='zh_TW.UTF-8' LANGUAGE='en_US:en' \
+    LANG='en_US.UTF-8' LANGUAGE='en_US:en' \
     ROOT_PASSWORD='root' \
     DEFAULT_USER='user' DEFAULT_USER_PASSWORD='user'
 
@@ -42,10 +42,11 @@ RUN $SCRIPTS_DIR/2.install-packages.sh
 ADD ./vnc-tools $VNC_TOOL_DIR
 RUN $SCRIPTS_DIR/3.install-vnc-core.sh
 ADD ./xfce $HOME
+# So VNC can start desktop as DEFAULT_USER (xstartup calls this)
+RUN cp $HOME/wm-startup.sh /usr/local/bin/wm-startup.sh && chmod 755 /usr/local/bin/wm-startup.sh
 
-# Install Debs and other softwares
-ADD ./pkg $HOME/install
-RUN $SCRIPTS_DIR/4.install-custome-pkgs.sh
+# Install VS Code, Firefox, AnyDesk (no local pkg)
+RUN $SCRIPTS_DIR/4.install-custom-pkgs.sh
 
 # Install Conda
 RUN $SCRIPTS_DIR/5.install-conda.sh
