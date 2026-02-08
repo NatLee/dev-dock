@@ -65,8 +65,7 @@ echo -e "\n------------------ VNC environment started (user: $DEFAULT_USER) ----
 echo -e "\nVNCSERVER on DISPLAY=$DISPLAY \n\t=> VNC viewer: $VNC_IP:$VNC_PORT"
 echo -e "\nnoVNC => http://$VNC_IP:$NO_VNC_PORT/?password=...\n"
 
-# Traefik strips /novnc/NAME and forwards to container; noVNC serves at / (--web so vnc.html is found)
-(cd "$NO_VNC_DIR" && $NO_VNC_DIR/utils/novnc_proxy --vnc localhost:$VNC_PORT --listen $NO_VNC_PORT --web "$NO_VNC_DIR") &
+$NO_VNC_DIR/utils/novnc_proxy --vnc localhost:$VNC_PORT --listen $NO_VNC_PORT &
 
 if [ -z "$1" ] || [[ $1 =~ -t|--tail-log ]]; then
     echo -e "\n------------------ $USER_HOME/.vnc/*$DISPLAY.log ------------------"

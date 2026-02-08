@@ -13,9 +13,7 @@ case "$ARCH" in
 esac
 # Avoid interactive prompt to add Microsoft repo (we install .deb only)
 echo "code code/add-microsoft-repo boolean false" | debconf-set-selections
-# Timeout and show progress so build does not appear stuck (VS Code .deb is large)
-wget --timeout=300 --tries=2 --progress=bar:force:noscroll -O /tmp/vscode.deb "https://update.code.visualstudio.com/latest/${VSCODE_DEB}/stable" || \
-  { echo "VS Code download failed or timed out" >&2; exit 1; }
+wget -qO /tmp/vscode.deb "https://update.code.visualstudio.com/latest/${VSCODE_DEB}/stable"
 dpkg -i /tmp/vscode.deb || true
 apt-get install -f -y
 rm -f /tmp/vscode.deb
@@ -37,8 +35,7 @@ done
 # Firefox (standalone to /opt; Mozilla now ships Linux as .tar.xz)
 echo "Installing Firefox..."
 apt-get -qq install -y xz-utils
-wget --timeout=300 --tries=2 --progress=bar:force:noscroll -O /tmp/FirefoxSetup.tar.xz "https://download.mozilla.org/?product=firefox-latest-ssl&os=${FIREFOX_OS}&lang=en-US" || \
-  { echo "Firefox download failed or timed out" >&2; exit 1; }
+wget -O /tmp/FirefoxSetup.tar.xz "https://download.mozilla.org/?product=firefox-latest-ssl&os=${FIREFOX_OS}&lang=en-US"
 tar xJf /tmp/FirefoxSetup.tar.xz -C /opt/
 rm -f /tmp/FirefoxSetup.tar.xz
 cat > /usr/share/applications/firefox.desktop << 'EOF'
@@ -72,7 +69,7 @@ update-alternatives --install /usr/bin/gnome-www-browser gnome-www-browser /opt/
 
 # AnyDesk from official apt repository
 echo "Installing AnyDesk..."
-wget --timeout=60 -qO - https://keys.anydesk.com/repos/DEB-GPG-KEY | apt-key add -
+wget -qO - https://keys.anydesk.com/repos/DEB-GPG-KEY | apt-key add -
 echo "deb http://deb.anydesk.com/ all main" | tee /etc/apt/sources.list.d/anydesk-stable.list
 apt-get -qq update -y
 apt-get -qq install -y anydesk

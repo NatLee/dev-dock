@@ -1,9 +1,6 @@
 #!/bin/bash
 set -euxo pipefail
 
-# Ensure apt index is available (may have been cleaned by a previous Docker layer)
-apt-get -qq update -y
-
 # Xfce desktop (lightweight, VNC-friendly)
 echo "Installing Xfce desktop..."
 apt-get -qq install -y supervisor dbus-x11 xfce4 xfce4-terminal
