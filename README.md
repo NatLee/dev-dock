@@ -1,127 +1,112 @@
-# Dev Dock
+# Dev Dock (GUI)
 
-A GUI Container using Xfce with noVNC.
+Docker image that provides a remote desktop (Xfce + TigerVNC + noVNC + SSH) for development.
 
-> Only support x86/64.
+> Supports **x86_64** and **arm64** (aarch64). Build the image on the same architecture as the host so Firefox and VS Code run natively.
 
 ![desktop](./doc/desktop.png)
 
-> Also can check the GUI [Management](https://github.com/NatLee/development-container-manager).
+> See also: [development-container-manager](https://github.com/NatLee/dev-dock-manager) for GUI management.
 
-This repo is creating a common GUI image by using docker for developing.
+## Included components
 
-The image included the following components:
+* **Xfce** desktop (lightweight)
+* **TigerVNC** (port 5901) + **noVNC** (port 6901, browser access)
+* **OpenSSH** (port 22)
+* **VS Code** (launched with `--no-sandbox` for container compatibility)
+* **Firefox**
+* **AnyDesk**
+* **Miniconda**
+* **fcitx5** Chinese input (e.g. Pinyin); use `fcitx5-configtool` to add or switch input methods
+* Git, vim, and common dev tools
 
-* Xfce Desktop
-* VNC Server (default VNC port: 5901)
-* VNC Client with HTML5 support (default http port: 6901)
-* OpenSSH (default SSH port: 22)
-* Git
-* Mini Conda
-* VScode
-* Firefox
-* Anydesk
+## Build and run
 
-## Run docker without sudo
+Build on the **same architecture** as the host (e.g. on Apple Silicon, build there) to avoid "Dynamic loader not found" for Firefox/VS Code.
 
 ```bash
-sudo groupadd docker && gpasswd -a $USER docker
+docker compose build && docker compose up
 ```
 
-**＊ You can change $USER to match your preferred user name if you do not want to use your current user**
-
-## Usage
-
-### Quick start
-
-- Build an image and run a testing container.
+Or run in background:
 
 ```bash
-docker-compose build && docker-compose up
+docker compose up -d
 ```
 
-### NVidia GPU support
+## Pull from Docker Hub
 
-If you need use this with NVIDIA GPUs, you need to follow this in the main system.
+Pre-built image: [natlee/gui-vnc](https://hub.docker.com/r/natlee/gui-vnc). Use the tag that matches your machine: **x86** (`-x86`) or **Apple Silicon / ARM** (`-arm64`).
 
-- [Installing the NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
-
-When NVidia Docker is installed, use this command to run a testing container with GPU support.
+Pull and run (replace `<TAG>` with e.g. `20250208-x86` or `20250208-arm64`):
 
 ```bash
-docker-compose -f docker-compose.nvidia.yml build && docker-compose -f docker-compose.nvidia.yml up
+docker pull natlee/gui-vnc:<TAG>
+
+docker run -d \
+  -p 12345:5901 -p 13579:6901 -p 24680:22 \
+  -v /etc/localtime:/etc/localtime:ro \
+  -e VNC_PW=mypassword \
+  -e DEFAULT_USER=dev -e DEFAULT_USER_PASSWORD=dev \
+  -e ROOT_PASSWORD=root \
+  --name gui natlee/gui-vnc:<TAG>
+```
+
+Then open noVNC in browser: `http://localhost:13579/?password=mypassword`. See [Parameters](#parameters-environment--run-options) for more options (`LANG`, `VNC_RESOLUTION`, etc.).
+
+## NVIDIA GPU
+
+Install [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) on the host, then use the GPU compose file:
+
+```bash
+docker compose -f docker-compose.nvidia.yml build && docker compose -f docker-compose.nvidia.yml up
 ```
 
 ## Connection
 
-If you have not change the default port yet, you can use the services with the following ports.
+| Service | Port (default) | How to connect |
+|--------|----------------|-----------------|
+| VNC    | 5901           | VNC client → `<HOST_IP>:<PORT>` |
+| noVNC  | 6901           | Browser → `http://<HOST_IP>:6901/?password=<VNC_PW>` |
+| SSH    | 22             | `ssh <user>@<HOST_IP> -p <PORT>` (user: `root` or `DEFAULT_USER`) |
 
-* VNC port: 5901, connect with host `<YOUR_HOST_IP>` and `<PORT>`
-* noVNC port: 6901, connect via `http://<YOUR_HOST_IP>:6901/?password=<YOUR_VNC_PASSWORD>`
-* SSH port: 22, connect with command line `ssh root@<YOUR_HOST_IP>:<PORT>`
+With the default `docker-compose.yml`, host ports are mapped to **12345** (VNC), **13579** (noVNC), **24680** (SSH).
 
-**＊ You can login SSH with `default user` or `root`.**
+## Parameters (environment / run options)
 
-## Parameters
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `VNC_PW` | vncpassword | VNC (and noVNC) password |
+| `VNC_RESOLUTION` | 1600x900 | Desktop resolution |
+| `VNC_VIEW_ONLY` | false | If true, noVNC is view-only |
+| `DEFAULT_USER` | user | Non-root user for desktop (e.g. AnyDesk) |
+| `DEFAULT_USER_PASSWORD` | user | Password for `DEFAULT_USER` |
+| `ROOT_PASSWORD` | root | Root password |
+| `LANG` | en_US.UTF-8 | Locale (e.g. `zh_TW.UTF-8` for Chinese) |
 
-You can use these parameters to set some settings.
-
-* Map ports
-    - 5901 (vnc protocol)
-    - 6901 (vnc web access)
-    - 22 (ssh protocol)
-
-`-p 12345:5901 -p 13579:6901 -p 24680:22`
-
-* Set the same timezone
-
-`-v /etc/localtime:/etc/localtime:ro`
-
-* Mount a volume
-
-`-v <YOUR_LOCAL_PATH>:<>YOUR_CONTAINER_PATH>`
-
-* Mount a network disk as a volume
-
-`sudo mount -t cifs -o username=<YOUR_USER_NAME>,password=<YOUR_PASSWORD>,vers=3.0 //<YOUR_NETWORK_LOCATION> <LOCAL_LOCATION>`
-
-`-v <LOCAL_LOCATION>:<>YOUR_CONTAINER_PATH>`
-
-* Override the VNC resolution
-
-`-e VNC_RESOLUTION=1920x1080`
-
-* Change the VNC password
-
-`-e VNC_PW=<YOUR_VNC_PWD>`
-
-* Change root password
-
-`-e ROOT_PASSWORD='root'`
-
-* Add user
-
-`-e DEFAULT_USER='user' -e DEFAULT_USER_PASSWORD='user'`
-
-
-### Execution with the only docker command
-
-**You need to restart the container to make Chinese input method work after first login into VNC.**
-
-* Run a testing container
+### Example: docker run
 
 ```bash
-docker run -d -p 12345:5901 -p 13579:6901 -p 24680:22 \
-            -v /etc/localtime:/etc/localtime:ro \
-            -v /home/infor/Desktop/test/:/root/Desktop/ \
-            -e VNC_PW=infor1234 \
-            -e VNC_RESOLUTION=1600x900 \
-            -e DEFAULT_USER='test' -e DEFAULT_USER_PASSWORD='test' \
-            -e ROOT_PASSWORD='root' \
-            --name test test-vnc-gui
+docker run -d \
+  -p 12345:5901 -p 13579:6901 -p 24680:22 \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /path/on/host:/root/Desktop \
+  -e VNC_PW=mypassword \
+  -e VNC_RESOLUTION=1920x1080 \
+  -e DEFAULT_USER=dev -e DEFAULT_USER_PASSWORD=dev \
+  -e ROOT_PASSWORD=root \
+  -e LANG=zh_TW.UTF-8 \
+  --name gui gui-vnc
 ```
 
-# License
+Build the image first (from this directory): `docker compose build` → image name is `gui-vnc`.
+
+### Useful run options
+
+* Map ports: `-p 12345:5901 -p 13579:6901 -p 24680:22`
+* Timezone: `-v /etc/localtime:/etc/localtime:ro`
+* Mount folder: `-v <HOST_PATH>:<CONTAINER_PATH>`
+
+## License
 
 [MIT](./LICENSE)
-

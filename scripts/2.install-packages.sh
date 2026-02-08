@@ -6,11 +6,6 @@ echo "Creating required directories..."
 mkdir -p ~/.zcs-deps
 mkdir -p ~/.ivy2/cache
 
-# Environment variables
-ENVIRONMENT_FILE="/etc/environment"
-echo 'LANG='zh_TW.utf-8'' >>$ENVIRONMENT_FILE
-echo 'LANGUAGE='en_US:en'' >>$ENVIRONMENT_FILE
-
 # Update the repository sources list
 echo "Updating the repository sources list..."
 apt-get -qq autoremove -y
@@ -50,10 +45,21 @@ apt-get -qq install -y apt-utils \
     filezilla \
     supervisor
 
-# Set locales
+# Set locales (required for C library and GUI; avoids "Locale not supported" / fallback 'C')
 echo "Setting up locales..."
-apt-get -qq install -y locales
-locale-gen zh_TW.UTF-8
+# Postinst validates LANG; use a locale that exists before we run locale-gen (Dockerfile may set LANG=zh_TW.UTF-8)
+LANG=C.UTF-8 apt-get -qq install -y locales
+# Enable locales in /etc/locale.gen then generate
+sed -i 's/^# *\(en_US\.UTF-8\)/\1/' /etc/locale.gen
+sed -i 's/^# *\(zh_TW\.UTF-8\)/\1/' /etc/locale.gen
+grep -q '^en_US.UTF-8' /etc/locale.gen || echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen
+grep -q '^zh_TW.UTF-8' /etc/locale.gen || echo 'zh_TW.UTF-8 UTF-8' >> /etc/locale.gen
+locale-gen
+# Default locale en (override at run with -e LANG=zh_TW.UTF-8)
+echo 'LANG=en_US.UTF-8' > /etc/default/locale
+echo 'LANGUAGE=en_US:en' >> /etc/default/locale
+echo 'LANG=en_US.UTF-8' >> /etc/environment
+echo 'LANGUAGE=en_US:en' >> /etc/environment
 
 # Install fonts
 echo "Install Chinese fonts..."
@@ -66,10 +72,7 @@ apt-get -y install fonts-droid-fallback \
 echo "Install Emoji fonts..."
 apt-get -y install fonts-noto-color-emoji
 
-# Install Chinese input methods
-echo "Install Chinese input methods..."
-apt-get update -y
-apt-get -y install fcitx fcitx-chewing
+# Chinese input is fcitx5 (installed in 3.install-vnc-core.sh); skip old fcitx to avoid conflict
 
 echo "Downloading ant contrib jar file..."
 cd ~/.zcs-deps && wget https://files.zimbra.com/repository/ant-contrib/ant-contrib-1.0b1.jar
