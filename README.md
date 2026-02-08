@@ -4,7 +4,7 @@ Docker image that provides a remote desktop (Xfce + TigerVNC + noVNC + SSH) for 
 
 > Supports **x86_64** and **arm64** (aarch64). Build the image on the same architecture as the host so Firefox and VS Code run natively.
 
-![desktop](./doc/desktop.png)
+![cover](./doc/cover.png)
 
 > See also: [development-container-manager](https://github.com/NatLee/dev-dock-manager) for GUI management.
 
