@@ -6,6 +6,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/NatLee/dev-dock/actions/workflows/ci.yml"><img src="https://github.com/NatLee/dev-dock/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://hub.docker.com/r/natlee/gui-vnc"><img src="https://img.shields.io/docker/pulls/natlee/gui-vnc" alt="Docker pulls"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/NatLee/dev-dock" alt="License: MIT"></a>
 </p>
@@ -29,10 +30,11 @@ logs in and gets their own desktop container on one machine:
 | Repo | What it is |
 |---|---|
 | **dev-dock** (this repo) | Builds the `gui-vnc` image: desktop, VNC, noVNC and SSH in one container. |
-| [dev-dock-manager](https://github.com/NatLee/dev-dock-manager) | Web dashboard with a Django (Python) API. |
-| [dev-dock-manager-rust](https://github.com/NatLee/dev-dock-manager-rust) | The same dashboard with a Rust API. |
+| [dev-dock-manager-rust](https://github.com/NatLee/dev-dock-manager-rust) | **Recommended.** Web dashboard with a Rust API: per-user desktops, user management. |
+| [dev-dock-manager](https://github.com/NatLee/dev-dock-manager) | The older version of the same dashboard, with a Django (Python) API. |
 
-Both managers include this repo as their `gui/` git submodule and build `gui-vnc` from it. When someone
+If you're setting this up today, use the Rust manager. Its README has the measured differences (image size,
+memory, startup time, response times). Both managers include this repo as their `gui/` git submodule and build `gui-vnc` from it. When someone
 clicks "create", the manager starts a `gui-vnc` container through the Docker socket, publishes only its SSH
 port, and puts its noVNC page behind Traefik (a reverse proxy) at `/novnc/<name>/`. Everything else about
 the container is what this README describes.
@@ -84,8 +86,8 @@ docker compose up -d
 ```
 
 Be patient with the first build: it downloads a few hundred packages plus VS Code, Firefox and Miniconda.
-On an x86_64 machine with Docker 29 a clean build took 10 to 26 minutes depending on download speed, and
-the image came out at about 7.8 GB.
+On GitHub's runners a clean build takes about 3 to 4 minutes (x86_64 and arm64) and the image is about
+5.2 GB. On a desktop machine behind a slower connection it took 10 to 26 minutes, almost all of it downloads.
 
 With the default `docker-compose.yml` (container name `test`, every password `test`):
 
@@ -99,15 +101,20 @@ With the default `docker-compose.yml` (container name `test`, every password `te
 
 ## Pull from Docker Hub
 
-Pre-built images are on [natlee/gui-vnc](https://hub.docker.com/r/natlee/gui-vnc). There are two tags:
+Pre-built images are on [natlee/gui-vnc](https://hub.docker.com/r/natlee/gui-vnc).
 
-| Tag | Architecture | Built |
-|---|---|---|
-| `20260208-arm64` | arm64 (Apple Silicon, ARM servers) | 2026-02-08 |
-| `20241202-x86` | x86_64 | 2024-12-02, from an older version of this repo |
+Every published GitHub release builds and pushes a new image with
+[`.github/workflows/publish.yml`](.github/workflows/publish.yml): it builds natively on an x86_64 and an
+arm64 runner, runs the same smoke test as CI on each, and only then pushes both under one tag, so Docker
+picks the right architecture for you:
+
+| Tag | What it is |
+|---|---|
+| `latest` | the newest release |
+| `2.1.0` and so on | a specific release (the GitHub tag `v2.1.0` without the `v`) |
 
 ```bash
-docker pull natlee/gui-vnc:20260208-arm64
+docker pull natlee/gui-vnc:latest
 
 docker run -d \
   -p 12345:5901 -p 13579:6901 -p 24680:22 \
@@ -115,11 +122,18 @@ docker run -d \
   -e VNC_PW=mypassword \
   -e DEFAULT_USER=dev -e DEFAULT_USER_PASSWORD=dev \
   -e ROOT_PASSWORD=root \
-  --name gui natlee/gui-vnc:20260208-arm64
+  --name gui natlee/gui-vnc:latest
 ```
 
-Then open `http://localhost:13579/?password=mypassword`. For the current version on x86_64, build the image
-yourself as shown above.
+Then open `http://localhost:13579/?password=mypassword`.
+
+The two tags from before the workflow existed stay up: `20260208-arm64` (arm64 only) and `20241202-x86`
+(x86_64 only, built from a 2024 version of this repo). Until the first release goes through the workflow,
+`latest` doesn't exist yet; build the image yourself as shown above.
+
+Maintainers can also start the workflow by hand (Actions → Publish to Docker Hub → Run workflow) with a
+version tag. Untick "push" to only build and smoke-test both architectures. It logs in with the repository
+secrets `DOCKER_USERNAME` and `DOCKER_TOKEN` (a Docker Hub access token).
 
 ## NVIDIA GPU
 
