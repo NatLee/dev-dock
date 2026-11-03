@@ -1,15 +1,16 @@
 #!/bin/bash
 
 # Change user settings (create DEFAULT_USER, set passwords)
-$SCRIPTS_DIR/1.user-settings.sh
+"$SCRIPTS_DIR/1.user-settings.sh"
 
-source $HOME/.bashrc
+# shellcheck source=/dev/null
+source "$HOME/.bashrc"
 
 # Add `--skip` to startup args, to skip the VNC startup procedure
 if [[ $1 =~ --skip ]]; then
     echo -e "\n\n------------------ SKIP VNC STARTUP -----------------"
     echo -e "\n\n------------------ EXECUTE COMMAND ------------------"
-    echo "Executing command: '${@:2}'"
+    echo "Executing command: '${*:2}'"
     exec "${@:2}"
 fi
 
@@ -56,43 +57,41 @@ XSTARTUP_EOF
 chmod 755 "$USER_HOME/.vnc/xstartup"
 chown "$DEFAULT_USER:$DEFAULT_USER" "$USER_HOME/.vnc/xstartup"
 
-# Start the VNC server as DEFAULT_USER
-if command -v vncserver >/dev/null 2>&1; then
-    # Classic vncserver wrapper (Debian's tigervnc-standalone-server, used on arm64)
-    runuser -u "$DEFAULT_USER" -- vncserver -kill "$DISPLAY" 2>/dev/null || true
-    rm -rf /tmp/.X*-lock /tmp/.X11-unix 2>/dev/null || true
-    runuser -u "$DEFAULT_USER" -- env DISPLAY="$DISPLAY" vncserver "$DISPLAY" -depth "$VNC_COL_DEPTH" -geometry "$VNC_RESOLUTION"
-else
-    # TigerVNC 1.16 from the bundled tarball (x86_64) has no vncserver on PATH, only the
-    # systemd-oriented vncsession. Do what the old wrapper did: X cookie, Xvnc, then xstartup.
-    pkill -u "$DEFAULT_USER" -x Xvnc 2>/dev/null || true
-    rm -rf /tmp/.X*-lock /tmp/.X11-unix 2>/dev/null || true
-    VNC_LOG="$USER_HOME/.vnc/$(hostname)$DISPLAY.log"
-    runuser -u "$DEFAULT_USER" -- bash -c "
-        xauth -f \"\$HOME/.Xauthority\" add \"\$(hostname)/unix$DISPLAY\" . \"\$(mcookie)\"
-        Xvnc $DISPLAY -auth \"\$HOME/.Xauthority\" -rfbauth \"\$HOME/.vnc/passwd\" -rfbport $VNC_PORT \
-            -depth $VNC_COL_DEPTH -geometry $VNC_RESOLUTION -desktop \"\$(hostname)$DISPLAY ($DEFAULT_USER)\" \
-            > \"$VNC_LOG\" 2>&1 &"
-    for _ in $(seq 1 50); do
-        [ -S "/tmp/.X11-unix/X${DISPLAY#:}" ] && break
-        sleep 0.2
-    done
-    runuser -u "$DEFAULT_USER" -- env DISPLAY="$DISPLAY" XAUTHORITY="$USER_HOME/.Xauthority" \
-        bash -c "\"\$HOME/.vnc/xstartup\" >> \"$VNC_LOG\" 2>&1 &"
-fi
+# Start the VNC server as DEFAULT_USER. Both TigerVNC builds the image installs (the bundled
+# tarball on x86_64, Debian's package on arm64) ship Xvnc, so start it directly the same way on
+# both: an X cookie, Xvnc on $DISPLAY / $VNC_PORT, then ~/.vnc/xstartup. (TigerVNC 1.16 dropped
+# the classic `vncserver` wrapper, so that can't be the common path.)
+VNC_LOG="$USER_HOME/.vnc/$(hostname)$DISPLAY.log"
+X_SOCKET="/tmp/.X11-unix/X${DISPLAY#:}"
+X_START_TIMEOUT_SECONDS=10
 
-# Start noVNC webclient (stays as root, proxies to localhost:5901)
+pkill -u "$DEFAULT_USER" -x Xvnc 2>/dev/null || true
+rm -rf /tmp/.X*-lock /tmp/.X11-unix 2>/dev/null || true
+runuser -u "$DEFAULT_USER" -- bash -c "
+    xauth -f \"\$HOME/.Xauthority\" add \"\$(hostname)/unix$DISPLAY\" . \"\$(mcookie)\"
+    Xvnc $DISPLAY -auth \"\$HOME/.Xauthority\" -rfbauth \"\$HOME/.vnc/passwd\" -rfbport $VNC_PORT \
+        -depth $VNC_COL_DEPTH -geometry $VNC_RESOLUTION -desktop \"\$(hostname)$DISPLAY ($DEFAULT_USER)\" \
+        > \"$VNC_LOG\" 2>&1 &"
+for _ in $(seq "$((X_START_TIMEOUT_SECONDS * 5))"); do
+    [ -S "$X_SOCKET" ] && break
+    sleep 0.2
+done
+[ -S "$X_SOCKET" ] || echo "Xvnc did not create $X_SOCKET within ${X_START_TIMEOUT_SECONDS}s, see $VNC_LOG" >&2
+runuser -u "$DEFAULT_USER" -- env DISPLAY="$DISPLAY" XAUTHORITY="$USER_HOME/.Xauthority" \
+    bash -c "\"\$HOME/.vnc/xstartup\" >> \"$VNC_LOG\" 2>&1 &"
+
+# Start noVNC webclient (stays as root, proxies to the VNC port)
 echo -e "\n------------------ VNC environment started (user: $DEFAULT_USER) ------------------"
 echo -e "\nVNCSERVER on DISPLAY=$DISPLAY \n\t=> VNC viewer: $VNC_IP:$VNC_PORT"
 echo -e "\nnoVNC => http://$VNC_IP:$NO_VNC_PORT/?password=...\n"
 
-$NO_VNC_DIR/utils/novnc_proxy --vnc localhost:$VNC_PORT --listen $NO_VNC_PORT &
+"$NO_VNC_DIR/utils/novnc_proxy" --vnc "localhost:$VNC_PORT" --listen "$NO_VNC_PORT" &
 
 if [ -z "$1" ] || [[ $1 =~ -t|--tail-log ]]; then
-    echo -e "\n------------------ $USER_HOME/.vnc/*$DISPLAY.log ------------------"
-    tail -f $USER_HOME/.vnc/*$DISPLAY.log
+    echo -e "\n------------------ $VNC_LOG ------------------"
+    tail -f "$VNC_LOG"
 else
     echo -e "\n------------------ EXECUTE COMMAND ------------------"
-    echo "Executing command: '$@'"
+    echo "Executing command: '$*'"
     exec "$@"
 fi

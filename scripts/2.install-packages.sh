@@ -83,7 +83,7 @@ echo "PasswordAuthentication yes" >>/etc/ssh/sshd_config
 echo "PermitRootLogin yes" >>/etc/ssh/sshd_config
 
 # Set ll
-echo "alias ll='ls -alF'" >>$HOME/.bashrc
+echo "alias ll='ls -alF'" >>"$HOME/.bashrc"
 
 # Set Conda
 echo "export PATH=/opt/conda/bin:$PATH" >>~/.bashrc

@@ -29,7 +29,7 @@ EXPOSE $NO_VNC_PORT
 EXPOSE $SSH_PORT
 
 # Add scripts
-ADD ./scripts $SCRIPTS_DIR
+COPY ./scripts $SCRIPTS_DIR
 RUN find $SCRIPTS_DIR -name '*.sh' -exec chmod a+x {} +
 
 # User settings
@@ -39,9 +39,9 @@ RUN $SCRIPTS_DIR/1.user-settings.sh
 RUN $SCRIPTS_DIR/2.install-packages.sh
 
 # Install required softwares
-ADD ./vnc-tools $VNC_TOOL_DIR
+COPY ./vnc-tools $VNC_TOOL_DIR
 RUN $SCRIPTS_DIR/3.install-vnc-core.sh
-ADD ./xfce $HOME
+COPY ./xfce $HOME
 # So VNC can start desktop as DEFAULT_USER (xstartup calls this)
 RUN cp $HOME/wm-startup.sh /usr/local/bin/wm-startup.sh && chmod 755 /usr/local/bin/wm-startup.sh
 
