@@ -30,7 +30,8 @@ chown "$DEFAULT_USER:$DEFAULT_USER" "$USER_HOME/.vnc/env"
 if [[ $VNC_VIEW_ONLY == "true" ]]; then
     echo "start VNC server in VIEW ONLY mode!"
     RAND_PW=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 20)
-    runuser -u "$DEFAULT_USER" -- bash -c "echo '$RAND_PW' | vncpasswd -f > \$HOME/.vnc/passwd"
+    # First entry: full-control password nobody knows. Second entry: VNC_PW, which only gets a view-only session.
+    runuser -u "$DEFAULT_USER" -- bash -c "{ echo '$RAND_PW' | vncpasswd -f; echo '$VNC_PW' | vncpasswd -f; } > \$HOME/.vnc/passwd"
 else
     runuser -u "$DEFAULT_USER" -- bash -c "echo '$VNC_PW' | vncpasswd -f > \$HOME/.vnc/passwd"
 fi
@@ -55,10 +56,30 @@ XSTARTUP_EOF
 chmod 755 "$USER_HOME/.vnc/xstartup"
 chown "$DEFAULT_USER:$DEFAULT_USER" "$USER_HOME/.vnc/xstartup"
 
-# Kill any existing server on this display, then start vncserver as DEFAULT_USER
-runuser -u "$DEFAULT_USER" -- vncserver -kill "$DISPLAY" 2>/dev/null || true
-rm -rf /tmp/.X*-lock /tmp/.X11-unix 2>/dev/null || true
-runuser -u "$DEFAULT_USER" -- env DISPLAY="$DISPLAY" vncserver "$DISPLAY" -depth "$VNC_COL_DEPTH" -geometry "$VNC_RESOLUTION"
+# Start the VNC server as DEFAULT_USER
+if command -v vncserver >/dev/null 2>&1; then
+    # Classic vncserver wrapper (Debian's tigervnc-standalone-server, used on arm64)
+    runuser -u "$DEFAULT_USER" -- vncserver -kill "$DISPLAY" 2>/dev/null || true
+    rm -rf /tmp/.X*-lock /tmp/.X11-unix 2>/dev/null || true
+    runuser -u "$DEFAULT_USER" -- env DISPLAY="$DISPLAY" vncserver "$DISPLAY" -depth "$VNC_COL_DEPTH" -geometry "$VNC_RESOLUTION"
+else
+    # TigerVNC 1.16 from the bundled tarball (x86_64) has no vncserver on PATH, only the
+    # systemd-oriented vncsession. Do what the old wrapper did: X cookie, Xvnc, then xstartup.
+    pkill -u "$DEFAULT_USER" -x Xvnc 2>/dev/null || true
+    rm -rf /tmp/.X*-lock /tmp/.X11-unix 2>/dev/null || true
+    VNC_LOG="$USER_HOME/.vnc/$(hostname)$DISPLAY.log"
+    runuser -u "$DEFAULT_USER" -- bash -c "
+        xauth -f \"\$HOME/.Xauthority\" add \"\$(hostname)/unix$DISPLAY\" . \"\$(mcookie)\"
+        Xvnc $DISPLAY -auth \"\$HOME/.Xauthority\" -rfbauth \"\$HOME/.vnc/passwd\" -rfbport $VNC_PORT \
+            -depth $VNC_COL_DEPTH -geometry $VNC_RESOLUTION -desktop \"\$(hostname)$DISPLAY ($DEFAULT_USER)\" \
+            > \"$VNC_LOG\" 2>&1 &"
+    for _ in $(seq 1 50); do
+        [ -S "/tmp/.X11-unix/X${DISPLAY#:}" ] && break
+        sleep 0.2
+    done
+    runuser -u "$DEFAULT_USER" -- env DISPLAY="$DISPLAY" XAUTHORITY="$USER_HOME/.Xauthority" \
+        bash -c "\"\$HOME/.vnc/xstartup\" >> \"$VNC_LOG\" 2>&1 &"
+fi
 
 # Start noVNC webclient (stays as root, proxies to localhost:5901)
 echo -e "\n------------------ VNC environment started (user: $DEFAULT_USER) ------------------"
