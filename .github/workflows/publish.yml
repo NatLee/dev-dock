@@ -7,6 +7,9 @@ name: Publish to Docker Hub
 on:
   release:
     types: [published]
+  # A PR that changes this file gets a dry run: both builds and smoke tests, nothing is pushed.
+  pull_request:
+    paths: [.github/workflows/publish.yml]
   workflow_dispatch:
     inputs:
       version:
