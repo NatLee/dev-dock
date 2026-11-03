@@ -1,0 +1,125 @@
+<!doctype html>
+<!--
+  dev-dock: how the image is built and what runs when a container starts.
+  Render the light and dark versions (#dark picks the dark theme) with a Chromium-based browser, e.g.
+    msedge --headless=new --hide-scrollbars --force-device-scale-factor=2 --window-size=960,616
+           --default-background-color=00000000 --virtual-time-budget=5000
+           --screenshot=dev-dock-flow-dark.png "file:///…/dev-dock-flow.html#dark"
+  then convert to WebP (magick dev-dock-flow-dark.png -quality 90 dev-dock-flow-dark.webp).
+  Steps, ports and names come from Dockerfile, scripts/, supervisord.conf and docker-compose.yml.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>dev-dock build and run</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=block" rel="stylesheet">
+<link rel="stylesheet" href="diagram.css">
+<style>
+  body, .frame { width: 960px; height: 616px; }
+  #build { left: 40px; top: 118px; width: 390px; height: 466px; }
+  .steps { margin-top: 12px; display: grid; gap: 8px; }
+  .step { display: grid; grid-template-columns: 40px 1fr; gap: 9px; align-items: start; }
+  .step .num { margin-top: 1px; justify-self: center; }
+  .step .num.base { background: var(--blue); width: auto; padding: 0 6px; border-radius: 6px; font-size: 10px; letter-spacing: .04em; }
+  .step .code { font-size: 12px; font-weight: 600; }
+  .step .sub { margin-top: 1px; font-size: 12px; line-height: 1.4; }
+  .out { margin-top: 12px; display: flex; align-items: center; gap: 10px; padding-top: 11px; border-top: 1px dashed var(--line); }
+  .out .chip { font-size: 13px; font-weight: 600; }
+  #run { left: 466px; top: 118px; width: 326px; height: 466px; }
+  .proc { margin-top: 10px; border: 1px solid var(--line); border-radius: 11px; padding: 9px 11px; background: var(--bg2); }
+  .proc .code { font-size: 12px; font-weight: 600; }
+  .proc .sub { font-size: 12px; margin-top: 3px; }
+  .proc ol { margin: 6px 0 0; padding-left: 17px; font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .proc ol code { font-size: 11px; }
+  .kv { margin-top: 10px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+  .kv code { font-size: 11px; }
+  .port { position: absolute; left: 816px; width: 106px; padding: 8px 10px; }
+  .port .label { letter-spacing: .03em; }
+  .connect { margin-top: 12px; border-top: 1px dashed var(--line); padding-top: 10px; }
+  .connect .row { display: grid; grid-template-columns: 62px 1fr; font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .connect code { font-size: 11px; }
+  .port .big { font-family: "JetBrains Mono", Consolas, monospace; font-size: 17px; font-weight: 600; margin-top: 3px; }
+  .port .sub { font-size: 11px; margin-top: 2px; }
+  #p-vnc { top: 196px; } #p-novnc { top: 286px; } #p-ssh { top: 376px; }
+</style>
+</head>
+<body>
+<script>if (location.hash.includes('dark')) document.documentElement.className = 'dark';</script>
+<div class="frame">
+  <div class="dots"></div>
+
+  <header>
+    <div class="mark">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="24" height="17" rx="3"/>
+        <path d="M8.5 10.5l3 2.5-3 2.5M14.5 15.5h5"/>
+        <path d="M10 26h10M15 21v5"/>
+      </svg>
+    </div>
+    <div>
+      <h1>dev-dock</h1>
+      <p class="tag">How the <b>gui-vnc</b> image is built, and what runs when a container starts.</p>
+    </div>
+  </header>
+  <div class="pip"><span>$</span>docker compose build &amp;&amp; docker compose up</div>
+
+  <svg class="wires" width="960" height="616">
+    <!-- image -> container -->
+    <path class="wire solid" d="M432 344 H458"/>
+    <path class="head" d="M464 344 l-9 -5 v10 z"/>
+    <!-- container ports -> host ports -->
+    <path class="wire" d="M792 230 H810"/><path class="head" d="M816 230 l-9 -5 v10 z"/>
+    <path class="wire" d="M792 320 H810"/><path class="head" d="M816 320 l-9 -5 v10 z"/>
+    <path class="wire" d="M792 410 H810"/><path class="head" d="M816 410 l-9 -5 v10 z"/>
+  </svg>
+
+  <div class="node" id="build">
+    <div class="label c-blue"><i></i>Build <span class="type">Dockerfile</span></div>
+    <div class="title sm">Six scripts on top of Debian</div>
+    <div class="steps">
+      <div class="step"><span class="num base">FROM</span><div><div class="code">debian:bookworm-slim</div></div></div>
+      <div class="step"><span class="num">1</span><div><div class="code">1.user-settings.sh</div><div class="sub">root password, creates <code>DEFAULT_USER</code> with sudo</div></div></div>
+      <div class="step"><span class="num">2</span><div><div class="code">2.install-packages.sh</div><div class="sub">OpenSSH, supervisor, git, vim, tmux, htop … en_US + zh_TW locales, CJK and emoji fonts</div></div></div>
+      <div class="step"><span class="num">3</span><div><div class="code">3.install-vnc-core.sh</div><div class="sub">Xfce, fcitx5 input, TigerVNC 1.16.0 (bundled on x86_64, apt on arm64), noVNC</div></div></div>
+      <div class="step"><span class="num">4</span><div><div class="code">4.install-custom-pkgs.sh</div><div class="sub">VS Code (runs with <code>--no-sandbox</code>), Firefox, AnyDesk</div></div></div>
+      <div class="step"><span class="num">5</span><div><div class="code">5.install-conda.sh</div><div class="sub">Miniconda in <code>/opt/conda</code></div></div></div>
+      <div class="step"><span class="num">6</span><div><div class="code">6.set-permissions.sh</div><div class="sub">opens up <code>/root</code> and the scripts for every user</div></div></div>
+    </div>
+    <div class="out"><span class="sub" style="margin: 0;">Result</span><span class="chip">image gui-vnc</span><span class="sub" style="margin: 0;">CMD supervisord</span></div>
+  </div>
+
+  <div class="node" id="run">
+    <div class="label c-green"><i></i>Run <span class="type">one container</span></div>
+    <div class="title sm">supervisord starts two programs</div>
+    <div class="proc">
+      <div class="code">[program:vnc] docker-entrypoint.sh</div>
+      <ol>
+        <li>sets the passwords from the env</li>
+        <li><code>vncserver :1</code> as <code>DEFAULT_USER</code>, Xfce + fcitx5 inside</li>
+        <li><code>novnc_proxy</code> on 6901 → <code>localhost:5901</code></li>
+      </ol>
+    </div>
+    <div class="proc">
+      <div class="code">[program:sshd] sshd -D</div>
+      <div class="sub">password login, root allowed</div>
+    </div>
+    <div class="kv">
+      <b style="color: var(--ink);">env</b> <code>VNC_PW</code> <code>VNC_RESOLUTION</code> <code>DEFAULT_USER</code> <code>DEFAULT_USER_PASSWORD</code> <code>ROOT_PASSWORD</code> <code>LANG</code><br>
+      <b style="color: var(--ink);">compose mounts</b> <code>./desktop → /root/Desktop</code>, <code>/etc/localtime</code> (ro)
+    </div>
+    <div class="connect">
+      <div class="label c-blue" style="margin-bottom: 4px;"><i></i>Connect with the compose defaults</div>
+      <div class="row"><span>Browser</span><span><code>localhost:13579/?password=test</code></span></div>
+      <div class="row"><span>VNC app</span><span><code>localhost:12345</code>, password <code>test</code></span></div>
+      <div class="row"><span>SSH</span><span><code>ssh test@localhost -p 24680</code></span></div>
+    </div>
+  </div>
+
+  <div class="node port" id="p-vnc"><div class="label c-purple"><i></i>:5901 VNC</div><div class="big">12345</div><div class="sub">VNC client</div></div>
+  <div class="node port" id="p-novnc"><div class="label c-blue"><i></i>:6901 noVNC</div><div class="big">13579</div><div class="sub">browser</div></div>
+  <div class="node port" id="p-ssh"><div class="label c-teal"><i></i>:22 SSH</div><div class="big">24680</div><div class="sub">ssh client</div></div>
+  <div class="wl" style="left: 814px; top: 168px; background: transparent; padding: 0;">host ports in compose</div>
+</div>
+</body>
+</html>
