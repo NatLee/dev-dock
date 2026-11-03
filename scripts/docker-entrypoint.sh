@@ -30,7 +30,8 @@ chown "$DEFAULT_USER:$DEFAULT_USER" "$USER_HOME/.vnc/env"
 if [[ $VNC_VIEW_ONLY == "true" ]]; then
     echo "start VNC server in VIEW ONLY mode!"
     RAND_PW=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 20)
-    runuser -u "$DEFAULT_USER" -- bash -c "echo '$RAND_PW' | vncpasswd -f > \$HOME/.vnc/passwd"
+    # First entry: full-control password nobody knows. Second entry: VNC_PW, which only gets a view-only session.
+    runuser -u "$DEFAULT_USER" -- bash -c "{ echo '$RAND_PW' | vncpasswd -f; echo '$VNC_PW' | vncpasswd -f; } > \$HOME/.vnc/passwd"
 else
     runuser -u "$DEFAULT_USER" -- bash -c "echo '$VNC_PW' | vncpasswd -f > \$HOME/.vnc/passwd"
 fi
