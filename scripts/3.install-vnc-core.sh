@@ -26,7 +26,8 @@ ARCH=$(uname -m)
 case "$ARCH" in
   x86_64)
     echo "Installing TigerVNC server from tarball..."
-    tar xzf $VNC_TOOL_DIR/tigervnc-1.16.0.x86_64.tar.gz --strip 1 -C /
+    # Whichever TigerVNC build is bundled in vnc-tools/ for this architecture
+    tar xzf "$VNC_TOOL_DIR"/tigervnc-*."$ARCH".tar.gz --strip 1 -C /
     ;;
   aarch64|arm64)
     echo "Installing TigerVNC server from apt (native $ARCH)..."
@@ -39,6 +40,6 @@ case "$ARCH" in
 esac
 
 # NoVNC
-git clone --depth 1 https://github.com/novnc/noVNC.git $NO_VNC_DIR
-chmod +x -v $NO_VNC_DIR/utils/*
-ln -s $NO_VNC_DIR/vnc.html $NO_VNC_DIR/index.html
+git clone --depth 1 https://github.com/novnc/noVNC.git "$NO_VNC_DIR"
+chmod +x -v "$NO_VNC_DIR"/utils/*
+ln -s "$NO_VNC_DIR/vnc.html" "$NO_VNC_DIR/index.html"

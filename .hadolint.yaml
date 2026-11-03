@@ -1,0 +1,4 @@
+ignored:
+  # One RUN per install script on purpose: each script is its own layer, so a change in
+  # scripts/5.install-conda.sh doesn't redo the slow package installs before it.
+  - DL3059
