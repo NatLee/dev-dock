@@ -1,0 +1,55 @@
+name: CI
+
+# Only the files that end up in the image (or check it) are worth a 10-30 minute build.
+on:
+  push:
+    branches: [main]
+    paths: &image-paths
+      - Dockerfile
+      - .hadolint.yaml
+      - supervisord.conf
+      - scripts/**
+      - vnc-tools/**
+      - xfce/**
+      - dev-*.sh
+      - .github/scripts/**
+      - .github/workflows/ci.yml
+  pull_request:
+    paths: *image-paths
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: shellcheck + hadolint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - name: shellcheck
+        run: >
+          docker run --rm -v "$PWD:/mnt:ro" -w /mnt koalaman/shellcheck:v0.10.0
+          scripts/*.sh xfce/wm-startup.sh dev-*.sh .github/scripts/*.sh
+      - name: hadolint
+        run: docker run --rm -v "$PWD:/mnt:ro" -w /mnt hadolint/hadolint:v2.12.0 hadolint Dockerfile
+
+  build:
+    name: build and smoke test (${{ matrix.arch }})
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build the image
+        run: |
+          start=$SECONDS
+          docker build -t gui-vnc:ci .
+          echo "Build took $(( (SECONDS - start) / 60 )) min $(( (SECONDS - start) % 60 )) s on ${{ matrix.runner }}" | tee -a "$GITHUB_STEP_SUMMARY"
+          docker image inspect gui-vnc:ci --format 'Image size: {{.Size}} bytes' | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Smoke test (VNC, noVNC, SSH, Xfce)
+        run: .github/scripts/smoke-test.sh gui-vnc:ci
