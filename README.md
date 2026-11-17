@@ -20,7 +20,7 @@ desktop and SSH in. Build it once, start as many containers as you like, and eve
 > Supports **x86_64** and **arm64** (aarch64). Build the image on the same architecture as the host so Firefox
 > and VS Code run natively.
 
-![The Xfce desktop in a browser, with Firefox, VS Code, a file manager and htop open](./doc/cover.png)
+![The Xfce desktop in a browser, with Firefox, VS Code, a file manager and htop open](./docs/images/cover.png)
 
 ## The Dev Dock family
 
